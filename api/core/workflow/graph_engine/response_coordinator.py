@@ -13,7 +13,7 @@ from threading import RLock
 from typing import Optional, TypeAlias
 from uuid import uuid4
 
-from core.workflow.enums import NodeExecutionType, NodeType
+from core.workflow.enums import NodeExecutionType, NodeState, NodeType
 from core.workflow.events import NodeRunStreamChunkEvent, NodeRunSucceededEvent
 from core.workflow.graph import Graph, Node
 from core.workflow.nodes.answer.answer_node import AnswerNode
@@ -408,6 +408,16 @@ class ResponseStreamCoordinator:
                 segment = template.segments[self.active_session.index]
 
                 if isinstance(segment, VariableSegment):
+                    # Check if the source node for this variable is skipped
+                    source_node_id = segment.selector[0]
+                    if source_node_id in self.graph.nodes:
+                        source_node = self.graph.nodes[source_node_id]
+
+                        if source_node.state == NodeState.SKIPPED:
+                            # Skip this variable segment if the source node is skipped
+                            self.active_session.index += 1
+                            continue
+
                     segment_events, is_complete = self._process_variable_segment(segment)
                     events.extend(segment_events)
 
