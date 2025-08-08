@@ -238,6 +238,7 @@ class ResponseStreamCoordinator:
         events: list[NodeRunStreamChunkEvent] = []
         if self.active_session is None:
             self.active_session = session
+            logger.debug("Session activated for node '%s'", session.node_id)
             # Try to flush immediately
             events.extend(self.try_flush())
         else:
@@ -406,12 +407,14 @@ class ResponseStreamCoordinator:
             events: list[NodeRunStreamChunkEvent] = []
 
             if self.active_session and self.active_session.node_id == node_id:
+                logger.debug("Session closed for node '%s'", node_id)
                 self.active_session = None
 
                 # Try to start next waiting session
                 if self.waiting_sessions:
                     next_session = self.waiting_sessions.popleft()
                     self.active_session = next_session
+                    logger.debug("Next session activated for node '%s' from queue", next_session.node_id)
                     # Immediately try to flush any available segments
                     events = self.try_flush()
 
