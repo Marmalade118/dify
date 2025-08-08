@@ -78,6 +78,10 @@ class ResponseSession:
             template=node.get_streaming_template(),
         )
 
+    def is_complete(self) -> bool:
+        """Check if all segments in the template have been processed."""
+        return self.index >= len(self.template.segments)
+
 
 class ResponseStreamCoordinator:
     """
@@ -389,6 +393,9 @@ class ResponseStreamCoordinator:
                     segment_events = self._process_text_segment(segment, response_node_id)
                     events.extend(segment_events)
                     self.active_session.index += 1
+
+            if self.active_session.is_complete():
+                self.end_session(response_node_id)
 
             return events
 
