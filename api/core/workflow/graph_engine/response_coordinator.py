@@ -248,6 +248,7 @@ class ResponseStreamCoordinator:
         else:
             # Queue the session if another is active
             self.waiting_sessions.append(session)
+            logger.debug("Session queued for node '%s'", session.node_id)
         return events
 
     def intercept_event(
