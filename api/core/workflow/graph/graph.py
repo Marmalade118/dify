@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional, cast
@@ -9,6 +10,8 @@ from .node import Node
 
 if TYPE_CHECKING:
     from core.workflow.nodes.node_factory import NodeFactory
+
+logger = logging.getLogger(__name__)
 
 
 class Graph:
@@ -158,7 +161,13 @@ class Graph:
         nodes: dict[str, Node] = {}
 
         for node_id, node_config in node_configs_map.items():
-            node_instance = node_factory.create_node(node_config)
+            if node_config.get("type", "") == "custom-note":
+                continue
+            try:
+                node_instance = node_factory.create_node(node_config)
+            except ValueError as e:
+                logger.warning("Failed to create node instance: %s", str(e))
+                continue
             nodes[node_id] = node_instance
 
         return nodes
