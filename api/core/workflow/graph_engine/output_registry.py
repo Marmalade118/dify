@@ -7,61 +7,64 @@ supporting both scalar values and streaming chunks with proper state management.
 
 from collections.abc import Sequence
 from threading import RLock
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from core.workflow.entities.variable_pool import VariablePool
+
+if TYPE_CHECKING:
+    from core.workflow.events.node import NodeRunStreamChunkEvent
 
 
 class Stream:
     """
-    A stream that holds content chunks and tracks read position.
+    A stream that holds NodeRunStreamChunkEvent objects and tracks read position.
 
     This class encapsulates stream-specific data and operations,
-    including content storage, read position tracking, and closed state.
+    including event storage, read position tracking, and closed state.
     """
 
     def __init__(self) -> None:
         """Initialize an empty stream."""
-        self.content: list[str] = []
+        self.events: list[NodeRunStreamChunkEvent] = []
         self.read_position: int = 0
         self.is_closed: bool = False
 
-    def append(self, chunk: str) -> None:
+    def append(self, event: "NodeRunStreamChunkEvent") -> None:
         """
-        Append a chunk to the stream.
+        Append a NodeRunStreamChunkEvent to the stream.
 
         Args:
-            chunk: The chunk content to append
+            event: The NodeRunStreamChunkEvent to append
 
         Raises:
             ValueError: If the stream is already closed
         """
         if self.is_closed:
             raise ValueError("Cannot append to a closed stream")
-        self.content.append(chunk)
+        self.events.append(event)
 
-    def pop_next(self) -> Optional[str]:
+    def pop_next(self) -> Optional["NodeRunStreamChunkEvent"]:
         """
-        Pop the next unread chunk from the stream.
+        Pop the next unread NodeRunStreamChunkEvent from the stream.
 
         Returns:
-            The next chunk, or None if no unread chunks available
+            The next event, or None if no unread events available
         """
-        if self.read_position >= len(self.content):
+        if self.read_position >= len(self.events):
             return None
 
-        chunk = self.content[self.read_position]
+        event = self.events[self.read_position]
         self.read_position += 1
-        return chunk
+        return event
 
     def has_unread(self) -> bool:
         """
-        Check if the stream has unread chunks.
+        Check if the stream has unread events.
 
         Returns:
-            True if there are unread chunks, False otherwise
+            True if there are unread events, False otherwise
         """
-        return self.read_position < len(self.content)
+        return self.read_position < len(self.events)
 
     def close(self) -> None:
         """Mark the stream as closed (no more chunks can be appended)."""
@@ -110,13 +113,13 @@ class OutputRegistry:
         with self._lock:
             return self._scalars.get(selector)
 
-    def append_chunk(self, selector: Sequence[str], chunk: str) -> None:
+    def append_chunk(self, selector: Sequence[str], event: "NodeRunStreamChunkEvent") -> None:
         """
-        Append a chunk to the stream for the given selector.
+        Append a NodeRunStreamChunkEvent to the stream for the given selector.
 
         Args:
             selector: List of strings identifying the stream location
-            chunk: The chunk content to append
+            event: The NodeRunStreamChunkEvent to append
 
         Raises:
             ValueError: If the stream is already closed
@@ -127,19 +130,19 @@ class OutputRegistry:
                 self._streams[key] = Stream()
 
             try:
-                self._streams[key].append(chunk)
+                self._streams[key].append(event)
             except ValueError:
                 raise ValueError(f"Stream {'.'.join(selector)} is already closed")
 
-    def pop_chunk(self, selector: Sequence[str]) -> Optional[str]:
+    def pop_chunk(self, selector: Sequence[str]) -> Optional["NodeRunStreamChunkEvent"]:
         """
-        Pop the next unread chunk from the stream.
+        Pop the next unread NodeRunStreamChunkEvent from the stream.
 
         Args:
             selector: List of strings identifying the stream location
 
         Returns:
-            The next chunk, or None if no unread chunks available
+            The next event, or None if no unread events available
         """
         key = self._selector_to_key(selector)
         with self._lock:
@@ -150,13 +153,13 @@ class OutputRegistry:
 
     def has_unread(self, selector: Sequence[str]) -> bool:
         """
-        Check if the stream has unread chunks.
+        Check if the stream has unread events.
 
         Args:
             selector: List of strings identifying the stream location
 
         Returns:
-            True if there are unread chunks, False otherwise
+            True if there are unread events, False otherwise
         """
         key = self._selector_to_key(selector)
         with self._lock:

@@ -113,6 +113,9 @@ class ResponseStreamCoordinator:
         # Track node execution IDs and types for proper event forwarding
         self._node_execution_ids: dict[NodeID, str] = {}  # node_id -> execution_id
 
+        # Track response sessions to ensure only one per node
+        self._response_sessions: dict[NodeID, ResponseSession] = {}  # node_id -> session
+
     def register(self, response_node_id: NodeID) -> None:
         with self.lock:
             self._response_nodes.add(response_node_id)
@@ -120,7 +123,37 @@ class ResponseStreamCoordinator:
             # Build and save paths map for this response node
             paths_map = self._build_paths_map(response_node_id)
             self._paths_maps[response_node_id] = paths_map
+
+            # Create and store response session for this node
+            response_node = self.graph.nodes[response_node_id]
+            session = ResponseSession.from_node(response_node)
+            self._response_sessions[response_node_id] = session
+
         logger.debug("registered response node '%s' with paths_map %r", response_node_id, paths_map)
+
+    def track_node_execution(self, node_id: NodeID, execution_id: str) -> None:
+        """Track the execution ID for a node when it starts executing.
+
+        Args:
+            node_id: The ID of the node
+            execution_id: The execution ID from NodeRunStartedEvent
+        """
+        with self.lock:
+            self._node_execution_ids[node_id] = execution_id
+
+    def _get_or_create_execution_id(self, node_id: NodeID) -> str:
+        """Get the execution ID for a node, creating one if it doesn't exist.
+
+        Args:
+            node_id: The ID of the node
+
+        Returns:
+            The execution ID for the node
+        """
+        with self.lock:
+            if node_id not in self._node_execution_ids:
+                self._node_execution_ids[node_id] = str(uuid4())
+            return self._node_execution_ids[node_id]
 
     def _build_paths_map(self, response_node_id: NodeID) -> list[Path]:
         """
@@ -218,31 +251,38 @@ class ResponseStreamCoordinator:
                     if path.is_empty():
                         has_reachable_path = True
 
-                # If node is now reachable (has empty path), create and start/queue session
+                # If node is now reachable (has empty path), start/queue session
                 if has_reachable_path:
-                    # Get the response node to create session
-                    response_node = self.graph.nodes[response_node_id]
-                    session = ResponseSession.from_node(response_node)
-
-                    # Start or queue the session
-                    events.extend(self._active_or_queue_session(session))
+                    # Pass the node_id to the activation method
+                    # The method will handle checking and removing from map
+                    events.extend(self._active_or_queue_session(response_node_id))
 
         return events
 
-    def _active_or_queue_session(self, session: ResponseSession) -> Sequence[NodeRunStreamChunkEvent]:
+    def _active_or_queue_session(self, node_id: str) -> Sequence[NodeRunStreamChunkEvent]:
         """
         Start a session immediately if no active session, otherwise queue it.
+        Only activates sessions that exist in the _response_sessions map.
 
         Args:
-            session: The response session to start or queue
+            node_id: The ID of the response node to activate
 
         Returns:
             List of events from flush attempt if session started immediately
         """
         events: list[NodeRunStreamChunkEvent] = []
+
+        # Get the session from our map (only activate if it exists)
+        session = self._response_sessions.get(node_id)
+        if not session:
+            return events
+
+        # Remove from map to ensure it won't be activated again
+        del self._response_sessions[node_id]
+
         if self.active_session is None:
             self.active_session = session
-            logger.debug("Session activated for node '%s'", session.node_id)
+            logger.debug("Session activated for node '%s', with template %r", session.node_id, session.template)
             # Try to flush immediately
             events.extend(self.try_flush())
         else:
@@ -256,7 +296,7 @@ class ResponseStreamCoordinator:
     ) -> Sequence[NodeRunStreamChunkEvent]:
         with self.lock:
             if isinstance(event, NodeRunStreamChunkEvent):
-                self.registry.append_chunk(event.selector, event.chunk)
+                self.registry.append_chunk(event.selector, event)
                 if event.is_final:
                     self.registry.close_stream(event.selector)
                 return self.try_flush()
@@ -300,30 +340,17 @@ class ResponseStreamCoordinator:
 
         if self.registry.has_unread(segment.selector):
             # Stream all available chunks
-            source_exec_id = self._node_execution_ids.get(
-                source_node_id, str(uuid4())
-            )  # FIXME(-LAN-): should not be a new uuid
+            source_exec_id = self._get_or_create_execution_id(source_node_id)
             source_node_type = self._get_node_type(source_node_id)
 
             # Check if this is the last chunk by looking ahead
             stream_closed = self.registry.stream_closed(segment.selector)
 
             while self.registry.has_unread(segment.selector):
-                if chunk := self.registry.pop_chunk(segment.selector):
-                    # Check if this is the final chunk
-                    has_more = self.registry.has_unread(segment.selector)
-                    is_final_chunk = stream_closed and not has_more
-
-                    events.append(
-                        self._create_stream_chunk_event(
-                            node_id=source_node_id,
-                            node_type=source_node_type,
-                            execution_id=source_exec_id,
-                            selector=segment.selector,
-                            chunk=chunk,
-                            is_final=is_final_chunk,
-                        )
-                    )
+                if event := self.registry.pop_chunk(segment.selector):
+                    # The event already contains all necessary information
+                    # We can use it directly in the RSC
+                    events.append(event)
 
             # Check if stream is closed to determine if segment is complete
             if stream_closed:
@@ -331,7 +358,7 @@ class ResponseStreamCoordinator:
 
         elif value := self.registry.get_scalar(segment.selector):
             # Process scalar value
-            source_exec_id = self._node_execution_ids.get(source_node_id, str(uuid4()))  # FIXME(-LAN-)
+            source_exec_id = self._get_or_create_execution_id(source_node_id)
             source_node_type = self._get_node_type(source_node_id)
 
             events.append(
@@ -348,18 +375,19 @@ class ResponseStreamCoordinator:
 
         return events, is_complete
 
-    def _process_text_segment(self, segment: TextSegment, response_node_id: str) -> Sequence[NodeRunStreamChunkEvent]:
+    def _process_text_segment(self, segment: TextSegment) -> Sequence[NodeRunStreamChunkEvent]:
         """Process a text segment. Returns (events, is_complete)."""
-        response_node_exec_id = self._node_execution_ids.get(response_node_id)
-        if not response_node_exec_id:
-            return []
+        assert self.active_session is not None
+        current_response_node = self.graph.nodes[self.active_session.node_id]
 
-        response_node_type = self._get_node_type(response_node_id)
+        # Use get_or_create_execution_id to ensure we have a consistent ID
+        execution_id = self._get_or_create_execution_id(current_response_node.id)
+
         event = self._create_stream_chunk_event(
-            node_id=response_node_id,
-            node_type=response_node_type,
-            execution_id=response_node_exec_id,
-            selector=[response_node_id, "answer"],  # FIXME(-LAN-)
+            node_id=current_response_node.id,
+            node_type=current_response_node.type,
+            execution_id=execution_id,
+            selector=[current_response_node.id, "answer"],  # FIXME(-LAN-)
             chunk=segment.text,
             is_final=True,
         )
@@ -391,7 +419,7 @@ class ResponseStreamCoordinator:
                         break
 
                 elif isinstance(segment, TextSegment):
-                    segment_events = self._process_text_segment(segment, response_node_id)
+                    segment_events = self._process_text_segment(segment)
                     events.extend(segment_events)
                     self.active_session.index += 1
 

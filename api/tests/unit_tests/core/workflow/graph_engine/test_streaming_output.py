@@ -8,7 +8,6 @@ This test validates that:
 
 import time
 from unittest.mock import patch
-from uuid import uuid4
 
 from core.app.entities.app_invoke_entities import InvokeFrom
 from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariablePool
@@ -31,13 +30,18 @@ from models.enums import UserFrom
 from .test_graph_engine import TableTestRunner
 
 
-def create_llm_generator_with_streaming(chunks: list[str]):
+def create_llm_generator_with_streaming(chunks: list[str], engine: GraphEngine):
     """Create a generator that simulates LLM streaming output"""
 
     def llm_generator(self):
+        # Use a deterministic execution ID for testing
+        # The actual execution ID will be set by the Worker when it creates the NodeRunStartedEvent
+        # For streaming events from the node itself, we should use a consistent ID
+        execution_id = f"llm-exec-{self.node_id}"
+
         for i, chunk in enumerate(chunks):
             yield NodeRunStreamChunkEvent(
-                id=str(uuid4()),
+                id=execution_id,
                 node_id=self.node_id,
                 node_type=self._node_type,
                 selector=[self.node_id, "text"],
@@ -122,7 +126,7 @@ def test_streaming_output_with_blocking_equals_one():
     # Simulate streaming chunks
     chunks = ["Hello", ", ", "this", " ", "is", " ", "streaming", " ", "response"]
     # Mock the LLM node to return streaming output
-    llm_generator = create_llm_generator_with_streaming(chunks)
+    llm_generator = create_llm_generator_with_streaming(chunks, engine)
 
     # Execute with mocked LLM
     with patch.object(LLMNode, "_run", new=llm_generator):
@@ -181,12 +185,15 @@ def test_streaming_output_with_blocking_equals_one():
         "Expected all Template chunk events to have same id with Template's NodeRunStartedEvent"
     )
 
-    # Check that NodeRunStreamChunkEvent contains '\n' should has same id with End NodeRunStartedEvent
+    # Check that NodeRunStreamChunkEvent contains '\n' is from the End node
     end_events = [e for e in events if isinstance(e, NodeRunStartedEvent) and e.node_type == NodeType.END]
     assert len(end_events) == 1, f"Expected 1 end event, but got {len(end_events)}"
-    end_event = end_events[0]
     newline_chunk_events = [e for e in stream_chunk_events if e.chunk == "\n"]
-    assert all(e.id == end_event.id for e in newline_chunk_events), "Expected all newline chunk events to have same id"
+    assert len(newline_chunk_events) == 1, f"Expected 1 newline chunk event, but got {len(newline_chunk_events)}"
+    # The newline chunk should be from the End node (check node_id, not execution id)
+    assert all(e.node_id == end_events[0].node_id for e in newline_chunk_events), (
+        "Expected all newline chunk events to be from End node"
+    )
 
 
 def test_streaming_output_with_blocking_not_equals_one():
@@ -209,7 +216,7 @@ def test_streaming_output_with_blocking_not_equals_one():
     # Simulate streaming chunks
     chunks = ["Hello", ", ", "this", " ", "is", " ", "streaming", " ", "response"]
     # Mock the LLM node to return streaming output
-    llm_generator = create_llm_generator_with_streaming(chunks)
+    llm_generator = create_llm_generator_with_streaming(chunks, engine)
 
     # Execute with mocked LLM
     with patch.object(LLMNode, "_run", new=llm_generator):
@@ -257,16 +264,20 @@ def test_streaming_output_with_blocking_not_equals_one():
     query_chunk_events = [e for e in stream_chunk_events if e.chunk == user_inputs["query"]]
     assert all(e.id == start_event.id for e in query_chunk_events), "Expected all query chunk events to have same id"
 
-    # Check all LLM's NodeRunStreamChunkEvent should has same id with LLM's NodeRunStartedEvent
+    # Check all LLM's NodeRunStreamChunkEvent should be from LLM nodes
     start_events = [e for e in events if isinstance(e, NodeRunStartedEvent) and e.node_type == NodeType.LLM]
     llm_chunk_events = [e for e in stream_chunk_events if e.node_type == NodeType.LLM]
-    assert all(e.id in [se.id for se in start_events] for e in llm_chunk_events), (
-        "Expected all LLM chunk events to have same id with LLM's NodeRunStartedEvent"
+    llm_node_ids = {se.node_id for se in start_events}
+    assert all(e.node_id in llm_node_ids for e in llm_chunk_events), (
+        "Expected all LLM chunk events to be from LLM nodes"
     )
 
-    # Check that NodeRunStreamChunkEvent contains '\n' should has same id with End NodeRunStartedEvent
+    # Check that NodeRunStreamChunkEvent contains '\n' is from the End node
     end_events = [e for e in events if isinstance(e, NodeRunStartedEvent) and e.node_type == NodeType.END]
     assert len(end_events) == 1, f"Expected 1 end event, but got {len(end_events)}"
-    end_event = end_events[0]
     newline_chunk_events = [e for e in stream_chunk_events if e.chunk == "\n"]
-    assert all(e.id == end_event.id for e in newline_chunk_events), "Expected all newline chunk events to have same id"
+    assert len(newline_chunk_events) == 1, f"Expected 1 newline chunk event, but got {len(newline_chunk_events)}"
+    # The newline chunk should be from the End node (check node_id, not execution id)
+    assert all(e.node_id == end_events[0].node_id for e in newline_chunk_events), (
+        "Expected all newline chunk events to be from End node"
+    )

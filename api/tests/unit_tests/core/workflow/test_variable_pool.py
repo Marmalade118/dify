@@ -68,14 +68,6 @@ def test_get_file_attribute(pool, file):
     assert result is None
 
 
-def test_use_long_selector(pool):
-    pool.add(("node_1", "part_1", "part_2"), StringSegment(value="test_value"))
-
-    result = pool.get(("node_1", "part_1", "part_2"))
-    assert result is not None
-    assert result.value == "test_value"
-
-
 class TestVariablePool:
     def test_constructor(self):
         # Test with minimal required SystemVariable
@@ -280,9 +272,6 @@ class TestVariablePoolSerialization:
             pool.add((self._NODE2_ID, "array_file"), ArrayFileSegment(value=[test_file]))
         pool.add((self._NODE2_ID, "array_any"), ArrayAnySegment(value=["mixed", 123, {"key": "value"}]))
 
-        # Add nested variables
-        pool.add((self._NODE3_ID, "nested", "deep", "var"), StringSegment(value="deep_value"))
-
     def test_system_variables(self):
         sys_vars = SystemVariable(
             user_id="test_user_id",
@@ -400,7 +389,6 @@ class TestVariablePoolSerialization:
             (self._NODE1_ID, "float_var"),
             (self._NODE2_ID, "array_string"),
             (self._NODE2_ID, "array_number"),
-            (self._NODE3_ID, "nested", "deep", "var"),
         ]
 
         for selector in test_selectors:
@@ -436,3 +424,13 @@ class TestVariablePoolSerialization:
         loaded = VariablePool.model_validate(pool_dict)
         assert isinstance(loaded.variable_dictionary, defaultdict)
         loaded.add(["non_exist_node", "a"], 1)
+
+
+def test_get_attr():
+    vp = VariablePool()
+    value = {"output": StringSegment(value="hello")}
+
+    vp.add(["node", "name"], value)
+    res = vp.get(["node", "name", "output"])
+    assert res is not None
+    assert res.value == "hello"

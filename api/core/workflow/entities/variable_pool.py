@@ -149,15 +149,27 @@ class VariablePool(BaseModel):
             attr = FileAttribute(attr)
             attr_value = file_manager.get_attr(file=segment.value, attr=attr)
             return variable_factory.build_segment(attr_value)
-        elif isinstance(segment, ObjectSegment):
-            value: Any = segment.value
-            for attr in selector[2:]:
-                value = getattr(value, attr, None)
-                if not value:
-                    return None
-            return variable_factory.build_segment(value)
 
-        raise ValueError(f"Unsupported selector: {selector}")
+        # Navigate through nested attributes
+        result: Any = segment
+        for attr in selector[2:]:
+            result = self._extract_value(result)
+            result = self._get_nested_attribute(result, attr)
+            if result is None:
+                return None
+
+        # Return result as Segment
+        return result if isinstance(result, Segment) else variable_factory.build_segment(result)
+
+    def _extract_value(self, obj: Any) -> Any:
+        """Extract the actual value from an ObjectSegment."""
+        return obj.value if isinstance(obj, ObjectSegment) else obj
+
+    def _get_nested_attribute(self, obj: Mapping[str, Any], attr: str) -> Any:
+        """Get a nested attribute from a dictionary-like object."""
+        if not isinstance(obj, dict):
+            return None
+        return obj.get(attr)
 
     def remove(self, selector: Sequence[str], /):
         """

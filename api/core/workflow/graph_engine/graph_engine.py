@@ -21,6 +21,7 @@ from core.workflow.events import (
     GraphRunStartedEvent,
     GraphRunSucceededEvent,
     NodeRunFailedEvent,
+    NodeRunStartedEvent,
     NodeRunStreamChunkEvent,
     NodeRunSucceededEvent,
 )
@@ -294,6 +295,7 @@ class GraphEngine:
         """
         # Event type to handler mapping
         handlers: dict[type[GraphEngineEvent], Callable[[Any], None]] = {
+            NodeRunStartedEvent: self._handle_node_started_event,
             NodeRunStreamChunkEvent: self._handle_stream_chunk_event,
             NodeRunSucceededEvent: self._handle_node_succeeded_event,
             NodeRunFailedEvent: self._handle_node_failed_event,
@@ -301,6 +303,17 @@ class GraphEngine:
         }
 
         return handlers.get(event_type)
+
+    def _handle_node_started_event(self, event: NodeRunStartedEvent) -> None:
+        """
+        Handle NodeRunStartedEvent by tracking execution ID in RSC.
+
+        Args:
+            event: The node started event to handle
+        """
+        # Track the execution ID in RSC for proper stream event generation
+        self.response_coordinator.track_node_execution(event.node_id, event.id)
+        self._collect_event(event)
 
     def _handle_stream_chunk_event(self, event: NodeRunStreamChunkEvent) -> None:
         """
@@ -334,6 +347,9 @@ class GraphEngine:
             self._executing_nodes.remove(event.node_id)
 
         self._collect_event(event)
+
+        if node.execution_type == NodeExecutionType.RESPONSE:
+            self.graph_runtime_state.outputs.update(event.node_run_result.outputs)
 
     def _store_node_outputs(self, event: NodeRunSucceededEvent) -> None:
         """

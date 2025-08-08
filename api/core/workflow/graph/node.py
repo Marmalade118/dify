@@ -17,6 +17,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class TypeDescriptor:
+    """Descriptor that allows accessing _node_type on both class and instance."""
+
+    def __get__(self, obj, objtype=None):
+        """Return _node_type whether accessed on class or instance."""
+        if objtype is None:
+            objtype = type(obj)
+        return objtype._node_type if hasattr(objtype, "_node_type") else None
+
+
 class Node:
     _node_type: ClassVar["NodeType"]
     execution_type: ClassVar[NodeExecutionType] = NodeExecutionType.EXECUTABLE
@@ -147,9 +157,7 @@ class Node:
     def get_default_config(cls, filters: Optional[dict] = None) -> dict:
         return {}
 
-    @property
-    def type(self):
-        return self._node_type
+    type = TypeDescriptor()
 
     @classmethod
     @abstractmethod

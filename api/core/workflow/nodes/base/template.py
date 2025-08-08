@@ -138,6 +138,9 @@ class Template:
             if value_selector:
                 segments.append(VariableSegment(selector=list(value_selector), variable_name=variable_name))
 
+        if len(segments) > 0 and isinstance(segments[-1], TextSegment):
+            segments = segments[:-1]
+
         return cls(segments=segments)
 
     def __str__(self) -> str:
