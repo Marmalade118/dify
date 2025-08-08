@@ -26,7 +26,7 @@ from core.workflow.events import (
 from core.workflow.graph import Graph
 from core.workflow.graph_engine import GraphEngine
 from core.workflow.nodes.llm.node import LLMNode
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.system_variable import SystemVariable
 from models.enums import UserFrom
 
@@ -116,7 +116,7 @@ def test_parallel_streaming_workflow():
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
 
     # Create node factory and graph
-    node_factory = DefaultNodeFactory(graph_init_params=init_params, graph_runtime_state=graph_runtime_state)
+    node_factory = DifyNodeFactory(graph_init_params=init_params, graph_runtime_state=graph_runtime_state)
     graph = Graph.init(graph_config=graph_config, node_factory=node_factory)
 
     # Create the graph engine

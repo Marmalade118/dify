@@ -8,7 +8,7 @@ from core.workflow.events import (
 )
 from core.workflow.graph import Graph
 from core.workflow.graph_engine import GraphEngine
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.system_variable import SystemVariable
 from models.enums import UserFrom
 
@@ -38,7 +38,7 @@ def create_test_graph_engine(graph_config: dict, system_query: str):
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(init_params, graph_runtime_state)
+    node_factory = DifyNodeFactory(init_params, graph_runtime_state)
     graph = Graph.init(graph_config=graph_config, node_factory=node_factory)
 
     return GraphEngine(

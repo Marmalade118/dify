@@ -90,7 +90,7 @@ class LoopNode(Node):
 
         # Initialize graph
         from core.workflow.entities import GraphInitParams
-        from core.workflow.nodes.node_factory import DefaultNodeFactory
+        from core.workflow.nodes.node_factory import DifyNodeFactory
 
         # Create GraphInitParams from node attributes
         graph_init_params = GraphInitParams(
@@ -104,7 +104,7 @@ class LoopNode(Node):
             call_depth=self.workflow_call_depth,
         )
 
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params, graph_runtime_state=self.graph_runtime_state
         )
         loop_graph = Graph.init(

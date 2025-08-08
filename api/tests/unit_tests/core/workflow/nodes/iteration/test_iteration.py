@@ -12,7 +12,7 @@ from core.workflow.events import NodeRunCompletedEvent, NodeRunResult
 from core.workflow.graph import Graph
 from core.workflow.nodes.iteration.entities import ErrorHandleMode
 from core.workflow.nodes.iteration.iteration_node import IterationNode
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.nodes.template_transform.template_transform_node import TemplateTransformNode
 from core.workflow.system_variable import SystemVariable
 from models.enums import UserFrom
@@ -162,7 +162,7 @@ def test_run():
     pool.add(["pe", "list_output"], ["dify-1", "dify-2"])
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -389,7 +389,7 @@ def test_run_parallel():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -616,7 +616,7 @@ def test_iteration_run_in_parallel_mode():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -855,7 +855,7 @@ def test_iteration_run_error_handle():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )

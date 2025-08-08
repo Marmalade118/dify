@@ -28,7 +28,7 @@ class NodeFactory(Protocol):
         ...
 
 
-class DefaultNodeFactory:
+class DifyNodeFactory:
     """
     Default implementation of NodeFactory that uses the traditional node mapping.
 

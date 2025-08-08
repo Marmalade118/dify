@@ -16,7 +16,7 @@ from core.workflow.events import GraphEngineEvent, GraphRunFailedEvent, InNodeEv
 from core.workflow.graph import Graph, Node
 from core.workflow.graph_engine import GraphEngine
 from core.workflow.nodes import NodeType
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.nodes.node_mapping import NODE_TYPE_CLASSES_MAPPING
 from core.workflow.system_variable import SystemVariable
 from core.workflow.variable_loader import DUMMY_VARIABLE_LOADER, VariableLoader, load_into_variable_pool
@@ -150,7 +150,7 @@ class WorkflowEntry:
         graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
 
         # init node factory
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
         )
@@ -299,7 +299,7 @@ class WorkflowEntry:
         graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
 
         # init node factory
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
         )

@@ -6,7 +6,7 @@ from core.app.entities.app_invoke_entities import InvokeFrom
 from core.variables import ArrayStringVariable
 from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariablePool
 from core.workflow.graph import Graph
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.nodes.variable_assigner.v2 import VariableAssignerNode
 from core.workflow.nodes.variable_assigner.v2.enums import InputType, Operation
 from core.workflow.system_variable import SystemVariable
@@ -109,7 +109,7 @@ def test_remove_first_from_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -202,7 +202,7 @@ def test_remove_last_from_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -287,7 +287,7 @@ def test_remove_first_from_empty_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -372,7 +372,7 @@ def test_remove_last_from_empty_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )

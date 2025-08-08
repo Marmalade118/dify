@@ -142,7 +142,7 @@ class IterationNode(Node):
 
         # init graph
         from core.workflow.entities import GraphInitParams
-        from core.workflow.nodes.node_factory import DefaultNodeFactory
+        from core.workflow.nodes.node_factory import DifyNodeFactory
 
         # Create GraphInitParams from node attributes
         graph_init_params = GraphInitParams(
@@ -156,7 +156,7 @@ class IterationNode(Node):
             call_depth=self.workflow_call_depth,
         )
 
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params, graph_runtime_state=self.graph_runtime_state
         )
         iteration_graph = Graph.init(graph_config=graph_config, node_factory=node_factory, root_node_id=root_node_id)

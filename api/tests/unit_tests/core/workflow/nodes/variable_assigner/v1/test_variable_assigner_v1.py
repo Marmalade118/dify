@@ -8,7 +8,7 @@ from core.variables import ArrayStringVariable, StringVariable
 from core.workflow.conversation_variable_updater import ConversationVariableUpdater
 from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariablePool
 from core.workflow.graph import Graph
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.nodes.variable_assigner.v1 import VariableAssignerNode
 from core.workflow.nodes.variable_assigner.v1.node_data import WriteMode
 from core.workflow.system_variable import SystemVariable
@@ -73,7 +73,7 @@ def test_overwrite_string_variable():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -175,7 +175,7 @@ def test_append_variable_to_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -268,7 +268,7 @@ def test_clear_array():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )

@@ -61,7 +61,7 @@ from core.workflow.events import (
 )
 from core.workflow.graph import Graph
 from core.workflow.nodes import NodeType
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.nodes.node_mapping import NODE_TYPE_CLASSES_MAPPING
 from core.workflow.system_variable import SystemVariable
 from core.workflow.variable_loader import DUMMY_VARIABLE_LOADER, VariableLoader, load_into_variable_pool
@@ -115,7 +115,7 @@ class WorkflowBasedAppRunner:
 
         # Use the provided graph_runtime_state for consistent state management
 
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
         )
@@ -187,7 +187,7 @@ class WorkflowBasedAppRunner:
             call_depth=0,
         )
 
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
         )
@@ -302,7 +302,7 @@ class WorkflowBasedAppRunner:
             call_depth=0,
         )
 
-        node_factory = DefaultNodeFactory(
+        node_factory = DifyNodeFactory(
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
         )

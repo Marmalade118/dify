@@ -6,7 +6,7 @@ from core.app.entities.app_invoke_entities import InvokeFrom
 from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariablePool
 from core.workflow.graph import Graph
 from core.workflow.nodes.answer.answer_stream_generate_router import AnswerStreamGeneratorRouter
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.system_variable import SystemVariable
 from models.enums import UserFrom
 
@@ -128,7 +128,7 @@ def test_init():
     )
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(init_params, graph_runtime_state)
+    node_factory = DifyNodeFactory(init_params, graph_runtime_state)
     graph = Graph.init(graph_config=graph_config, node_factory=node_factory)
 
     answer_stream_generate_route = AnswerStreamGeneratorRouter.init(

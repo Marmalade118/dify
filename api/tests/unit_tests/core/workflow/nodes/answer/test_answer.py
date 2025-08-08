@@ -7,7 +7,7 @@ from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariableP
 from core.workflow.enums import WorkflowNodeExecutionStatus
 from core.workflow.graph import Graph
 from core.workflow.nodes.answer.answer_node import AnswerNode
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.system_variable import SystemVariable
 from extensions.ext_database import db
 from models.enums import UserFrom
@@ -59,7 +59,7 @@ def test_execute_answer():
     graph_runtime_state = GraphRuntimeState(variable_pool=variable_pool, start_at=time.perf_counter())
 
     # create node factory
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )

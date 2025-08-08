@@ -10,7 +10,7 @@ from core.workflow.enums import WorkflowNodeExecutionStatus
 from core.workflow.graph import Graph
 from core.workflow.nodes.if_else.entities import IfElseNodeData
 from core.workflow.nodes.if_else.if_else_node import IfElseNode
-from core.workflow.nodes.node_factory import DefaultNodeFactory
+from core.workflow.nodes.node_factory import DifyNodeFactory
 from core.workflow.system_variable import SystemVariable
 from core.workflow.utils.condition.entities import Condition, SubCondition, SubVariableCondition
 from extensions.ext_database import db
@@ -53,7 +53,7 @@ def test_execute_if_else_result_true():
     pool.add(["start", "not_null"], "1212")
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
@@ -150,7 +150,7 @@ def test_execute_if_else_result_false():
     pool.add(["start", "array_not_contains"], ["ab", "def"])
 
     graph_runtime_state = GraphRuntimeState(variable_pool=pool, start_at=time.perf_counter())
-    node_factory = DefaultNodeFactory(
+    node_factory = DifyNodeFactory(
         graph_init_params=init_params,
         graph_runtime_state=graph_runtime_state,
     )
