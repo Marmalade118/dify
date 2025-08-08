@@ -97,7 +97,6 @@ class KnowledgeRetrievalNode(Node):
         graph_init_params: "GraphInitParams",
         graph_runtime_state: "GraphRuntimeState",
         previous_node_id: Optional[str] = None,
-        thread_pool_id: Optional[str] = None,
         *,
         llm_file_saver: LLMFileSaver | None = None,
     ) -> None:
@@ -107,7 +106,6 @@ class KnowledgeRetrievalNode(Node):
             graph_init_params=graph_init_params,
             graph_runtime_state=graph_runtime_state,
             previous_node_id=previous_node_id,
-            thread_pool_id=thread_pool_id,
         )
         # LLM file outputs, used for MultiModal outputs.
         self._file_outputs: list[File] = []

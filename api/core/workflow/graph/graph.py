@@ -161,8 +161,6 @@ class Graph:
         nodes: dict[str, Node] = {}
 
         for node_id, node_config in node_configs_map.items():
-            if node_config.get("type", "") == "custom-note":
-                continue
             try:
                 node_instance = node_factory.create_node(node_config)
             except ValueError as e:
@@ -184,11 +182,9 @@ class Graph:
         Initialize graph
 
         :param graph_config: graph config containing nodes and edges
-        :param graph_init_params: graph initialization parameters
-        :param graph_runtime_state: graph runtime state
         :param node_factory: factory for creating node instances from config data
         :param root_node_id: root node id
-        :return: graph instance with V2 attributes populated
+        :return: graph instance
         """
         # Parse configs
         edge_configs = graph_config.get("edges", [])
@@ -198,7 +194,7 @@ class Graph:
             raise ValueError("Graph must have at least one node")
 
         edge_configs = cast(list, edge_configs)
-        node_configs = cast(list, node_configs)
+        node_configs = [node_config for node_config in node_configs if node_config.get("type", "") != "custom-note"]
 
         # Parse node configurations
         node_configs_map = cls._parse_node_configs(node_configs)

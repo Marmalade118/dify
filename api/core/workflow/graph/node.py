@@ -28,7 +28,6 @@ class Node:
         graph_init_params: "GraphInitParams",
         graph_runtime_state: "GraphRuntimeState",
         previous_node_id: Optional[str] = None,
-        thread_pool_id: Optional[str] = None,
     ) -> None:
         self.id = id
         self.tenant_id = graph_init_params.tenant_id
@@ -41,7 +40,6 @@ class Node:
         self.workflow_call_depth = graph_init_params.call_depth
         self.graph_runtime_state = graph_runtime_state
         self.previous_node_id = previous_node_id
-        self.thread_pool_id = thread_pool_id
         self.state: NodeState = NodeState.UNKNOWN  # node execution state
 
         node_id = config.get("id")
