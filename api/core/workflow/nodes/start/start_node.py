@@ -9,7 +9,7 @@ from core.workflow.nodes.start.entities import StartNodeData
 
 
 class StartNode(Node):
-    _node_type = NodeType.START
+    node_type = NodeType.START
 
     _node_data: StartNodeData
 

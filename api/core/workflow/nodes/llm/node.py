@@ -100,7 +100,7 @@ logger = logging.getLogger(__name__)
 
 
 class LLMNode(Node):
-    _node_type = NodeType.LLM
+    node_type = NodeType.LLM
 
     _node_data: LLMNodeData
 
@@ -257,7 +257,7 @@ class LLMNode(Node):
                 file_saver=self._llm_file_saver,
                 file_outputs=self._file_outputs,
                 node_id=self.node_id,
-                node_type=self.type,
+                node_type=self.node_type,
             )
 
             structured_output: LLMStructuredOutput | None = None
@@ -296,7 +296,7 @@ class LLMNode(Node):
             yield NodeRunStreamChunkEvent(
                 id=str(uuid4()),
                 node_id=self.node_id,
-                node_type=self.type,
+                node_type=self.node_type,
                 # New spec-compliant fields
                 selector=[self.node_id, "text"],
                 chunk="",

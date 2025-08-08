@@ -110,7 +110,7 @@ class Worker(threading.Thread):
         start_event = NodeRunStartedEvent(
             id=node_execution_id,  # Required: node execution id
             node_id=node.id,
-            node_type=node.type,
+            node_type=node.node_type,
             node_title=node.title,
             parallel_id=None,
             in_iteration_id=None,
@@ -151,7 +151,7 @@ class Worker(threading.Thread):
         success_event = NodeRunSucceededEvent(
             id=node_execution_id,  # Use same node execution id
             node_id=node.id,
-            node_type=node.type,
+            node_type=node.node_type,
             parallel_id=None,
             in_iteration_id=None,
             start_at=start_at,

@@ -12,7 +12,7 @@ class LoopStartNode(Node):
     Loop Start Node.
     """
 
-    _node_type = NodeType.LOOP_START
+    node_type = NodeType.LOOP_START
 
     _node_data: LoopStartNodeData
 

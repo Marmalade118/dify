@@ -46,7 +46,7 @@ class ToolNode(Node):
     Tool Node
     """
 
-    _node_type = NodeType.TOOL
+    node_type = NodeType.TOOL
 
     _node_data: ToolNodeData
 
@@ -318,7 +318,7 @@ class ToolNode(Node):
                 yield NodeRunStreamChunkEvent(
                     id=str(uuid4()),
                     node_id=node_id,
-                    node_type=self.type,
+                    node_type=self.node_type,
                     # New spec-compliant fields
                     selector=[node_id, "text"],
                     chunk=message.message.text,
@@ -366,7 +366,7 @@ class ToolNode(Node):
                 yield NodeRunStreamChunkEvent(
                     id=str(uuid4()),
                     node_id=node_id,
-                    node_type=self.type,
+                    node_type=self.node_type,
                     # New spec-compliant fields
                     selector=[node_id, "text"],
                     chunk=stream_text,
@@ -389,7 +389,7 @@ class ToolNode(Node):
                     yield NodeRunStreamChunkEvent(
                         id=str(uuid4()),
                         node_id=node_id,
-                        node_type=self.type,
+                        node_type=self.node_type,
                         # New spec-compliant fields
                         selector=[node_id, variable_name],
                         chunk=variable_value,
@@ -461,7 +461,7 @@ class ToolNode(Node):
         yield NodeRunStreamChunkEvent(
             id=str(uuid4()),
             node_id=self.node_id,
-            node_type=self.type,
+            node_type=self.node_type,
             # New spec-compliant fields
             selector=[self.node_id, "text"],
             chunk="",
@@ -476,7 +476,7 @@ class ToolNode(Node):
             yield NodeRunStreamChunkEvent(
                 id=str(uuid4()),
                 node_id=self.node_id,
-                node_type=self.type,
+                node_type=self.node_type,
                 # New spec-compliant fields
                 selector=[self.node_id, var_name],
                 chunk="",

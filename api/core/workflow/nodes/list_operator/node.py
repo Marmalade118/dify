@@ -13,7 +13,7 @@ from .exc import InvalidConditionError, InvalidFilterValueError, InvalidKeyError
 
 
 class ListOperatorNode(Node):
-    _node_type = NodeType.LIST_OPERATOR
+    node_type = NodeType.LIST_OPERATOR
 
     _node_data: ListOperatorNodeData
 

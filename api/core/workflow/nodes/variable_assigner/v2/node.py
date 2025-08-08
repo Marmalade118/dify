@@ -52,7 +52,7 @@ def _source_mapping_from_item(mapping: MutableMapping[str, Sequence[str]], node_
 
 
 class VariableAssignerNode(Node):
-    _node_type = NodeType.VARIABLE_ASSIGNER
+    node_type = NodeType.VARIABLE_ASSIGNER
 
     _node_data: VariableAssignerNodeData
 

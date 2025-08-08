@@ -17,7 +17,7 @@ from core.workflow.nodes.base.variable_template_parser import VariableTemplatePa
 
 
 class AnswerNode(Node):
-    _node_type = NodeType.ANSWER
+    node_type = NodeType.ANSWER
     execution_type = NodeExecutionType.RESPONSE
 
     _node_data: AnswerNodeData

@@ -13,7 +13,7 @@ from core.workflow.utils.condition.processor import ConditionProcessor
 
 
 class IfElseNode(Node):
-    _node_type = NodeType.IF_ELSE
+    node_type = NodeType.IF_ELSE
     execution_type = NodeExecutionType.BRANCH
 
     _node_data: IfElseNodeData

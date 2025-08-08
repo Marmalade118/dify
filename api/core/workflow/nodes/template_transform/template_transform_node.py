@@ -12,7 +12,7 @@ MAX_TEMPLATE_TRANSFORM_OUTPUT_LENGTH = int(os.environ.get("TEMPLATE_TRANSFORM_MA
 
 
 class TemplateTransformNode(Node):
-    _node_type = NodeType.TEMPLATE_TRANSFORM
+    node_type = NodeType.TEMPLATE_TRANSFORM
 
     _node_data: TemplateTransformNodeData
 

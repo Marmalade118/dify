@@ -216,7 +216,7 @@ def test_extract_text_from_docx(mock_document):
 
 
 def test_node_type(document_extractor_node):
-    assert document_extractor_node._node_type == NodeType.DOCUMENT_EXTRACTOR
+    assert document_extractor_node.node_type == NodeType.DOCUMENT_EXTRACTOR
 
 
 @patch("pandas.ExcelFile")

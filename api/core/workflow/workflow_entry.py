@@ -199,7 +199,7 @@ class WorkflowEntry:
                 "error while running node, workflow_id=%s, node_id=%s, node_type=%s, node_version=%s",
                 workflow.id,
                 node.id,
-                node.type,
+                node.node_type,
                 node.version(),
             )
             raise WorkflowNodeRunFailedError(node=node, err_msg=str(e))
@@ -345,7 +345,7 @@ class WorkflowEntry:
             logger.exception(
                 "error while running node, node_id=%s, node_type=%s, node_version=%s",
                 node.id,
-                node.type,
+                node.node_type,
                 node.version(),
             )
             raise WorkflowNodeRunFailedError(node=node, err_msg=str(e))

@@ -41,7 +41,7 @@ class DocumentExtractorNode(Node):
     Supports plain text, PDF, and DOC/DOCX files.
     """
 
-    _node_type = NodeType.DOCUMENT_EXTRACTOR
+    node_type = NodeType.DOCUMENT_EXTRACTOR
 
     _node_data: DocumentExtractorNodeData
 

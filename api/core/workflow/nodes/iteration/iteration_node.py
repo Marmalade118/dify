@@ -58,7 +58,7 @@ class IterationNode(Node):
     Iteration Node.
     """
 
-    _node_type = NodeType.ITERATION
+    node_type = NodeType.ITERATION
 
     _node_data: IterationNodeData
 
@@ -196,7 +196,7 @@ class IterationNode(Node):
         yield IterationRunStartedEvent(
             iteration_id=self.id,
             iteration_node_id=self.node_id,
-            iteration_node_type=self.type,
+            iteration_node_type=self.node_type,
             iteration_node_data=self._node_data,
             start_at=start_at,
             inputs=inputs,
@@ -207,7 +207,7 @@ class IterationNode(Node):
         yield IterationRunNextEvent(
             iteration_id=self.id,
             iteration_node_id=self.node_id,
-            iteration_node_type=self.type,
+            iteration_node_type=self.node_type,
             iteration_node_data=self._node_data,
             index=0,
             pre_iteration_output=None,
@@ -241,7 +241,7 @@ class IterationNode(Node):
             yield IterationRunSucceededEvent(
                 iteration_id=self.id,
                 iteration_node_id=self.node_id,
-                iteration_node_type=self.type,
+                iteration_node_type=self.node_type,
                 iteration_node_data=self._node_data,
                 start_at=start_at,
                 inputs=inputs,
@@ -266,7 +266,7 @@ class IterationNode(Node):
             yield IterationRunFailedEvent(
                 iteration_id=self.id,
                 iteration_node_id=self.node_id,
-                iteration_node_type=self.type,
+                iteration_node_type=self.node_type,
                 iteration_node_data=self._node_data,
                 start_at=start_at,
                 inputs=inputs,
@@ -434,7 +434,7 @@ class IterationNode(Node):
                             yield IterationRunFailedEvent(
                                 iteration_id=self.id,
                                 iteration_node_id=self.node_id,
-                                iteration_node_type=self.type,
+                                iteration_node_type=self.node_type,
                                 iteration_node_data=self._node_data,
                                 parallel_mode_run_id=parallel_mode_run_id,
                                 start_at=start_at,
@@ -448,7 +448,7 @@ class IterationNode(Node):
                             yield IterationRunFailedEvent(
                                 iteration_id=self.id,
                                 iteration_node_id=self.node_id,
-                                iteration_node_type=self.type,
+                                iteration_node_type=self.node_type,
                                 iteration_node_data=self._node_data,
                                 start_at=start_at,
                                 inputs=inputs,
@@ -483,7 +483,7 @@ class IterationNode(Node):
                             yield IterationRunNextEvent(
                                 iteration_id=self.id,
                                 iteration_node_id=self.node_id,
-                                iteration_node_type=self.type,
+                                iteration_node_type=self.node_type,
                                 iteration_node_data=self._node_data,
                                 index=next_index,
                                 parallel_mode_run_id=parallel_mode_run_id,
@@ -504,7 +504,7 @@ class IterationNode(Node):
                             yield IterationRunNextEvent(
                                 iteration_id=self.id,
                                 iteration_node_id=self.node_id,
-                                iteration_node_type=self.type,
+                                iteration_node_type=self.node_type,
                                 iteration_node_data=self._node_data,
                                 index=next_index,
                                 parallel_mode_run_id=parallel_mode_run_id,
@@ -527,7 +527,7 @@ class IterationNode(Node):
                                 yield IterationRunFailedEvent(
                                     iteration_id=self.id,
                                     iteration_node_id=self.node_id,
-                                    iteration_node_type=self.type,
+                                    iteration_node_type=self.node_type,
                                     iteration_node_data=self._node_data,
                                     parallel_mode_run_id=parallel_mode_run_id,
                                     start_at=start_at,
@@ -541,7 +541,7 @@ class IterationNode(Node):
                                 yield IterationRunFailedEvent(
                                     iteration_id=self.id,
                                     iteration_node_id=self.node_id,
-                                    iteration_node_type=self.type,
+                                    iteration_node_type=self.node_type,
                                     iteration_node_data=self._node_data,
                                     start_at=start_at,
                                     inputs=inputs,
@@ -580,7 +580,7 @@ class IterationNode(Node):
             yield IterationRunNextEvent(
                 iteration_id=self.id,
                 iteration_node_id=self.node_id,
-                iteration_node_type=self.type,
+                iteration_node_type=self.node_type,
                 iteration_node_data=self._node_data,
                 index=next_index,
                 parallel_mode_run_id=parallel_mode_run_id,
@@ -593,7 +593,7 @@ class IterationNode(Node):
             yield IterationRunFailedEvent(
                 iteration_id=self.id,
                 iteration_node_id=self.node_id,
-                iteration_node_type=self.type,
+                iteration_node_type=self.node_type,
                 iteration_node_data=self._node_data,
                 start_at=start_at,
                 inputs=inputs,

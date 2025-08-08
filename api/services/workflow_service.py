@@ -521,7 +521,7 @@ class WorkflowService:
             workflow_id="",  # This is a single-step execution, so no workflow ID
             index=1,
             node_id=node_id,
-            node_type=node.type,
+            node_type=node.node_type,
             title=node.title,
             elapsed_time=time.perf_counter() - start_at,
             created_at=naive_utc_now(),

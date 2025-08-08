@@ -12,7 +12,7 @@ class IterationStartNode(Node):
     Iteration Start Node.
     """
 
-    _node_type = NodeType.ITERATION_START
+    node_type = NodeType.ITERATION_START
 
     _node_data: IterationStartNodeData
 

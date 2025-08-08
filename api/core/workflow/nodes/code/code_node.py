@@ -21,7 +21,7 @@ from .exc import (
 
 
 class CodeNode(Node):
-    _node_type = NodeType.CODE
+    node_type = NodeType.CODE
 
     _node_data: CodeNodeData
 

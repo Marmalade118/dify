@@ -12,7 +12,7 @@ class LoopEndNode(Node):
     Loop End Node.
     """
 
-    _node_type = NodeType.LOOP_END
+    node_type = NodeType.LOOP_END
 
     _node_data: LoopEndNodeData
 

@@ -42,7 +42,7 @@ def create_llm_generator_with_delay(chunks: list[str], delay: float = 0.1):
             yield NodeRunStreamChunkEvent(
                 id=str(uuid4()),
                 node_id=self.node_id,
-                node_type=self._node_type,
+                node_type=self.node_type,
                 selector=[self.node_id, "text"],
                 chunk=chunk,
                 is_final=i == len(chunks) - 1,

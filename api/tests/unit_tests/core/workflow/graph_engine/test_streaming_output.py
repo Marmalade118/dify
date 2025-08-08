@@ -43,7 +43,7 @@ def create_llm_generator_with_streaming(chunks: list[str], engine: GraphEngine):
             yield NodeRunStreamChunkEvent(
                 id=execution_id,
                 node_id=self.node_id,
-                node_type=self._node_type,
+                node_type=self.node_type,
                 selector=[self.node_id, "text"],
                 chunk=chunk,
                 is_final=i == len(chunks) - 1,

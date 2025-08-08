@@ -90,7 +90,7 @@ class ParameterExtractorNode(Node):
     Parameter Extractor Node.
     """
 
-    _node_type = NodeType.PARAMETER_EXTRACTOR
+    node_type = NodeType.PARAMETER_EXTRACTOR
 
     _node_data: ParameterExtractorNodeData
 

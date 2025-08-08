@@ -64,7 +64,7 @@ class AgentNode(Node):
     Agent Node
     """
 
-    _node_type = NodeType.AGENT
+    node_type = NodeType.AGENT
     _node_data: AgentNodeData
 
     def init_node_data(self, data: Mapping[str, Any]) -> None:
@@ -159,7 +159,7 @@ class AgentNode(Node):
                 parameters_for_log=parameters_for_log,
                 user_id=self.user_id,
                 tenant_id=self.tenant_id,
-                node_type=self.type,
+                node_type=self.node_type,
                 node_id=self.node_id,
                 node_execution_id=self.id,
             )
@@ -558,7 +558,7 @@ class AgentNode(Node):
                 yield NodeRunStreamChunkEvent(
                     id=str(uuid4()),
                     node_id=node_id,
-                    node_type=self.type,
+                    node_type=self.node_type,
                     # New spec-compliant fields
                     selector=[node_id, "text"],
                     chunk=message.message.text,
@@ -586,7 +586,7 @@ class AgentNode(Node):
                 yield NodeRunStreamChunkEvent(
                     id=str(uuid4()),
                     node_id=node_id,
-                    node_type=self.type,
+                    node_type=self.node_type,
                     # New spec-compliant fields
                     selector=[node_id, "text"],
                     chunk=stream_text,
@@ -614,7 +614,7 @@ class AgentNode(Node):
                     yield NodeRunStreamChunkEvent(
                         id=str(uuid4()),
                         node_id=node_id,
-                        node_type=self.type,
+                        node_type=self.node_type,
                         # New spec-compliant fields
                         selector=[node_id, variable_name],
                         chunk=variable_value,
@@ -727,7 +727,7 @@ class AgentNode(Node):
         yield NodeRunStreamChunkEvent(
             id=str(uuid4()),
             node_id=node_id,
-            node_type=self.type,
+            node_type=self.node_type,
             # New spec-compliant fields
             selector=[node_id, "text"],
             chunk="",
@@ -742,7 +742,7 @@ class AgentNode(Node):
             yield NodeRunStreamChunkEvent(
                 id=str(uuid4()),
                 node_id=node_id,
-                node_type=self.type,
+                node_type=self.node_type,
                 # New spec-compliant fields
                 selector=[node_id, var_name],
                 chunk="",

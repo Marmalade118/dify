@@ -47,7 +47,7 @@ class LoopNode(Node):
     Loop Node.
     """
 
-    _node_type = NodeType.LOOP
+    node_type = NodeType.LOOP
 
     _node_data: LoopNodeData
 
@@ -166,7 +166,7 @@ class LoopNode(Node):
         yield LoopRunStartedEvent(
             loop_id=self.id,
             loop_node_id=self.node_id,
-            loop_node_type=self.type,
+            loop_node_type=self.node_type,
             loop_node_data=self._node_data,
             start_at=start_at,
             inputs=inputs,
@@ -223,7 +223,7 @@ class LoopNode(Node):
             yield LoopRunSucceededEvent(
                 loop_id=self.id,
                 loop_node_id=self.node_id,
-                loop_node_type=self.type,
+                loop_node_type=self.node_type,
                 loop_node_data=self._node_data,
                 start_at=start_at,
                 inputs=inputs,
@@ -256,7 +256,7 @@ class LoopNode(Node):
             yield LoopRunFailedEvent(
                 loop_id=self.id,
                 loop_node_id=self.node_id,
-                loop_node_type=self.type,
+                loop_node_type=self.node_type,
                 loop_node_data=self._node_data,
                 start_at=start_at,
                 inputs=inputs,
@@ -359,7 +359,7 @@ class LoopNode(Node):
                     yield LoopRunFailedEvent(
                         loop_id=self.id,
                         loop_node_id=self.node_id,
-                        loop_node_type=self.type,
+                        loop_node_type=self.node_type,
                         loop_node_data=self._node_data,
                         start_at=start_at,
                         inputs=inputs,
@@ -390,7 +390,7 @@ class LoopNode(Node):
                 yield LoopRunFailedEvent(
                     loop_id=self.id,
                     loop_node_id=self.node_id,
-                    loop_node_type=self.type,
+                    loop_node_type=self.node_type,
                     loop_node_data=self._node_data,
                     start_at=start_at,
                     inputs=inputs,
@@ -439,7 +439,7 @@ class LoopNode(Node):
         yield LoopRunNextEvent(
             loop_id=self.id,
             loop_node_id=self.node_id,
-            loop_node_type=self.type,
+            loop_node_type=self.node_type,
             loop_node_data=self._node_data,
             index=next_index,
             pre_loop_output=self._node_data.outputs,

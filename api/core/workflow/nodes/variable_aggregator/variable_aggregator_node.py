@@ -9,7 +9,7 @@ from core.workflow.nodes.variable_aggregator.entities import VariableAssignerNod
 
 
 class VariableAggregatorNode(Node):
-    _node_type = NodeType.VARIABLE_AGGREGATOR
+    node_type = NodeType.VARIABLE_AGGREGATOR
 
     _node_data: VariableAssignerNodeData
 

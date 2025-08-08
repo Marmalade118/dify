@@ -9,7 +9,7 @@ from core.workflow.nodes.end.entities import EndNodeData
 
 
 class EndNode(Node):
-    _node_type = NodeType.END
+    node_type = NodeType.END
     execution_type = NodeExecutionType.RESPONSE
 
     _node_data: EndNodeData

@@ -23,7 +23,7 @@ _CONV_VAR_UPDATER_FACTORY: TypeAlias = Callable[[], ConversationVariableUpdater]
 
 
 class VariableAssignerNode(Node):
-    _node_type = NodeType.VARIABLE_ASSIGNER
+    node_type = NodeType.VARIABLE_ASSIGNER
     _conv_var_updater_factory: _CONV_VAR_UPDATER_FACTORY
 
     _node_data: VariableAssignerData

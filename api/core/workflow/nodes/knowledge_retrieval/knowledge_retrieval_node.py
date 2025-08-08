@@ -80,7 +80,7 @@ default_retrieval_model = {
 
 
 class KnowledgeRetrievalNode(Node):
-    _node_type = NodeType.KNOWLEDGE_RETRIEVAL
+    node_type = NodeType.KNOWLEDGE_RETRIEVAL
 
     _node_data: KnowledgeRetrievalNodeData
 
@@ -539,7 +539,7 @@ class KnowledgeRetrievalNode(Node):
                 file_saver=self._llm_file_saver,
                 file_outputs=self._file_outputs,
                 node_id=self.node_id,
-                node_type=self.type,
+                node_type=self.node_type,
             )
 
             for event in generator:

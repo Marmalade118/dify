@@ -26,10 +26,10 @@ def test_ensure_subclasses_of_base_node_has_node_type_and_version_method_defined
     for cls in classes:
         # Validate that 'version' is directly defined in the class (not inherited) by checking the class's __dict__
         assert "version" in cls.__dict__, f"class {cls} should have version method defined (NOT INHERITED.)"
-        node_type = cls.type
+        node_type = cls.node_type
         node_version = cls.version()
 
-        assert isinstance(cls.type, NodeType)
+        assert isinstance(cls.node_type, NodeType)
         assert isinstance(node_version, str)
         node_type_and_version = (node_type, node_version)
         assert node_type_and_version not in type_version_set

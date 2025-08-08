@@ -307,7 +307,7 @@ class ResponseStreamCoordinator:
         return []
 
     def _get_node_type(self, node_id: str):
-        return self.graph.nodes[node_id].type
+        return self.graph.nodes[node_id].node_type
 
     def _create_stream_chunk_event(
         self,
@@ -385,7 +385,7 @@ class ResponseStreamCoordinator:
 
         event = self._create_stream_chunk_event(
             node_id=current_response_node.id,
-            node_type=current_response_node.type,
+            node_type=current_response_node.node_type,
             execution_id=execution_id,
             selector=[current_response_node.id, "answer"],  # FIXME(-LAN-)
             chunk=segment.text,

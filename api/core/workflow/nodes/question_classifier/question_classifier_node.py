@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 
 class QuestionClassifierNode(Node):
-    _node_type = NodeType.QUESTION_CLASSIFIER
+    node_type = NodeType.QUESTION_CLASSIFIER
     execution_type = NodeExecutionType.BRANCH
 
     _node_data: QuestionClassifierNodeData
@@ -186,7 +186,7 @@ class QuestionClassifierNode(Node):
                 file_saver=self._llm_file_saver,
                 file_outputs=self._file_outputs,
                 node_id=self.node_id,
-                node_type=self.type,
+                node_type=self.node_type,
             )
 
             for event in generator:

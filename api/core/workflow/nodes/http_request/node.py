@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class HttpRequestNode(Node):
-    _node_type = NodeType.HTTP_REQUEST
+    node_type = NodeType.HTTP_REQUEST
 
     _node_data: HttpRequestNodeData
 
