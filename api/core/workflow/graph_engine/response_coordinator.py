@@ -225,11 +225,11 @@ class ResponseStreamCoordinator:
                     session = ResponseSession.from_node(response_node)
 
                     # Start or queue the session
-                    events.extend(self._start_or_queue_session(session))
+                    events.extend(self._active_or_queue_session(session))
 
         return events
 
-    def _start_or_queue_session(self, session: ResponseSession) -> Sequence[NodeRunStreamChunkEvent]:
+    def _active_or_queue_session(self, session: ResponseSession) -> Sequence[NodeRunStreamChunkEvent]:
         """
         Start a session immediately if no active session, otherwise queue it.
 
