@@ -21,7 +21,6 @@ class NodeRunStartedEvent(GraphBaseNodeEvent):
     parallel_mode_run_id: Optional[str] = None
     agent_strategy: Optional[AgentNodeStrategyInit] = None
     start_at: datetime = Field(..., description="node start time")
-    node_run_index: int = Field(..., description="node run index")
 
     # FIXME(-LAN-): only for ToolNode
     provider_type: str = ""

@@ -83,7 +83,6 @@ class Node:
             parallel_id=None,
             in_iteration_id=None,
             start_at=start_at,
-            node_run_index=0,
         )
 
         yield start_event

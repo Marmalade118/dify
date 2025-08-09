@@ -359,7 +359,7 @@ class QueueNodeStartedEvent(AppQueueEvent):
     node_id: str
     node_title: str
     node_type: NodeType
-    node_run_index: int = 1
+    node_run_index: int = 1  # FIXME(-LAN-): may not used
     predecessor_node_id: Optional[str] = None
     parallel_id: Optional[str] = None
     parallel_start_node_id: Optional[str] = None
