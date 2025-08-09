@@ -30,7 +30,6 @@ from core.app.entities.queue_entities import (
     QueueWorkflowSucceededEvent,
 )
 from core.workflow.entities import GraphInitParams, GraphRuntimeState, VariablePool
-from core.workflow.enums import WorkflowNodeExecutionMetadataKey
 from core.workflow.events import (
     AgentLogEvent,
     GraphEngineEvent,
@@ -377,10 +376,6 @@ class WorkflowBasedAppRunner:
             self._publish_event(QueueWorkflowFailedEvent(error=event.error, exceptions_count=event.exceptions_count))
         elif isinstance(event, NodeRunRetryEvent):
             node_run_result = event.node_run_result
-            inputs: Mapping[str, Any] | None = {}
-            process_data: Mapping[str, Any] | None = {}
-            outputs: Mapping[str, Any] | None = {}
-            execution_metadata: Mapping[WorkflowNodeExecutionMetadataKey, Any] | None = {}
             inputs = node_run_result.inputs
             process_data = node_run_result.process_data
             outputs = node_run_result.outputs

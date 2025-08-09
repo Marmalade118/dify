@@ -11,22 +11,25 @@ import threading
 import time
 from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import Any, Optional, TypedDict
+from uuid import uuid4
 
 from core.app.entities.app_invoke_entities import InvokeFrom
 from core.workflow.entities import GraphRuntimeState
 from core.workflow.enums import ErrorStrategy, NodeExecutionType, NodeState, WorkflowNodeExecutionStatus
 from core.workflow.events import (
+    GraphBaseNodeEvent,
     GraphEngineEvent,
     GraphRunFailedEvent,
     GraphRunStartedEvent,
     GraphRunSucceededEvent,
     NodeRunFailedEvent,
     NodeRunResult,
+    NodeRunRetryEvent,
     NodeRunStartedEvent,
     NodeRunStreamChunkEvent,
     NodeRunSucceededEvent,
 )
-from core.workflow.graph import Graph
+from core.workflow.graph import Edge, Graph
 from models.enums import UserFrom
 
 from .output_registry import OutputRegistry
@@ -36,7 +39,7 @@ from .worker import Worker
 logger = logging.getLogger(__name__)
 
 
-class EdgeStateAnalysis(TypedDict):
+class _EdgeStateAnalysis(TypedDict):
     """Analysis result for edge states."""
 
     has_unknown: bool
@@ -100,7 +103,7 @@ class GraphEngine:
 
         # Core queue-based architecture components
         self.ready_queue: queue.Queue[str] = queue.Queue()
-        self.event_queue: queue.Queue[GraphEngineEvent] = queue.Queue()
+        self.event_queue: queue.Queue[GraphBaseNodeEvent] = queue.Queue()
         self.state_lock = threading.RLock()
 
         # Subsystems
@@ -134,6 +137,13 @@ class GraphEngine:
         # Track nodes currently being executed
         self._executing_nodes: set[str] = set()
         self._executing_nodes_lock = threading.Lock()
+
+        # Private map to track node retry attempts
+        # Key: node_id, Value: retry_count
+        self._node_retry_tracker: dict[str, int] = {}
+
+        # Manage all node's execution and give them same id.
+        self._node_execution_id_map: dict[str, str] = {}
 
         # Validate that all nodes share the same GraphRuntimeState instance
         # This is critical for thread-safe execution and consistent state management
@@ -221,11 +231,11 @@ class GraphEngine:
         # Wait for workers to finish
         for worker in self.workers:
             if worker.is_alive():
-                worker.join(timeout=1.0)
+                worker.join(timeout=10.0)
 
         # Wait for dispatcher
         if self.dispatcher_thread and self.dispatcher_thread.is_alive():
-            self.dispatcher_thread.join(timeout=1.0)
+            self.dispatcher_thread.join(timeout=10.0)
 
     def _dispatcher_loop(self) -> None:
         """Main dispatcher loop that processes events from workers."""
@@ -259,7 +269,7 @@ class GraphEngine:
             self._error = e
             self._execution_complete.set()
 
-    def _process_event(self, event: GraphEngineEvent) -> None:
+    def _process_event(self, event: GraphBaseNodeEvent) -> None:
         """
         Process an event from the event queue based on its type.
 
@@ -273,8 +283,9 @@ class GraphEngine:
         else:
             # TODO(-LAN-): temp code.
             self._collect_event(event)
+            logger.warning("no handler for event: %s", event)
 
-    def _collect_event(self, event: GraphEngineEvent) -> None:
+    def _collect_event(self, event: GraphBaseNodeEvent) -> None:
         """
         Thread-safe method to append an event to the collected events list.
 
@@ -282,6 +293,12 @@ class GraphEngine:
             event: The event to append to the collection.
         """
         with self._event_collector_lock:
+            if event.node_id in self._node_execution_id_map:
+                node_exec_id = self._node_execution_id_map[event.node_id]
+            else:
+                node_exec_id = str(uuid4())
+                self._node_execution_id_map[event.node_id] = node_exec_id
+            event.id = node_exec_id
             self._collected_events.append(event)
 
     def _get_event_handler(self, event_type: type[GraphEngineEvent]) -> Callable[[Any], None] | None:
@@ -314,6 +331,8 @@ class GraphEngine:
         """
         # Track the execution ID in RSC for proper stream event generation
         self.response_coordinator.track_node_execution(event.node_id, event.id)
+        if event.node_id in self._node_retry_tracker:
+            return
         self._collect_event(event)
 
     def _handle_stream_chunk_event(self, event: NodeRunStreamChunkEvent) -> None:
@@ -346,6 +365,10 @@ class GraphEngine:
 
         with self._executing_nodes_lock:
             self._executing_nodes.remove(event.node_id)
+
+        # Clean up retry tracker for successful node
+        if event.node_id in self._node_retry_tracker:
+            del self._node_retry_tracker[event.node_id]
 
         self._collect_event(event)
 
@@ -412,7 +435,7 @@ class GraphEngine:
         for edge in selected_edges:
             self._process_taken_edge(edge)
 
-    def _categorize_branch_edges(self, node_id: str, selected_handle: str) -> tuple[list, list]:
+    def _categorize_branch_edges(self, node_id: str, selected_handle: str) -> tuple[list[Edge], list[Edge]]:
         """
         Categorize branch edges into selected and unselected.
 
@@ -435,7 +458,7 @@ class GraphEngine:
 
         return selected_edges, unselected_edges
 
-    def _process_skipped_edges(self, edges: list) -> None:
+    def _process_skipped_edges(self, edges: list[Edge]) -> None:
         """
         Mark edges as skipped and recursively skip downstream paths.
 
@@ -446,7 +469,7 @@ class GraphEngine:
             edge.state = NodeState.SKIPPED
             self._recursively_mark_skipped_from_edge(edge.id)
 
-    def _process_taken_edge(self, edge) -> None:
+    def _process_taken_edge(self, edge: Edge) -> None:
         """
         Mark edge as taken, notify RSC, and enqueue downstream node if ready.
 
@@ -474,7 +497,8 @@ class GraphEngine:
         node = self.graph.nodes[event.node_id]
         strategy = node.error_strategy
 
-        if node.retry:
+        current_retry_count = self._node_retry_tracker.get(event.node_id, 0)
+        if node.retry and current_retry_count < node.retry_config.max_retries:
             self._handle_retry_strategy(event)
         elif strategy is None:
             self._handle_abort_strategy(event)
@@ -492,7 +516,7 @@ class GraphEngine:
         """
         # Serialize state & exit
         self._collect_event(event)
-        raise RuntimeError(event.node_run_result.error)
+        raise RuntimeError(event.error)
 
     def _handle_retry_strategy(self, event: NodeRunFailedEvent) -> None:
         """
@@ -501,8 +525,32 @@ class GraphEngine:
         Args:
             event: The node failed event
         """
-        # Re-enqueue node
-        pass
+        node = self.graph.nodes[event.node_id]
+
+        # Get current retry count for this node
+        current_retry_count = self._node_retry_tracker.get(event.node_id, 0)
+
+        # Update retry count
+        current_retry_count += 1
+        self._node_retry_tracker[event.node_id] = current_retry_count
+
+        # Wait for retry interval if specified
+        time.sleep(node.retry_config.retry_interval_seconds)
+
+        # emit a retry event
+        retry_event = NodeRunRetryEvent(
+            id=event.id,
+            node_title=node.title,
+            node_id=event.node_id,
+            node_type=event.node_type,
+            node_run_result=event.node_run_result,
+            start_at=event.start_at,
+            error=event.error,
+            retry_index=current_retry_count,
+        )
+        self._collect_event(retry_event)
+
+        self._mark_taken_and_enqueue(event.node_id)
 
     def _handle_special_branch_strategy(self, event: NodeRunFailedEvent) -> None:
         """
@@ -557,7 +605,7 @@ class GraphEngine:
         )
         self._process_event(converted_event)
 
-    def _handle_container_event(self, event: GraphEngineEvent) -> None:
+    def _handle_container_event(self, event: GraphBaseNodeEvent) -> None:
         """
         Handle container events by triggering SGE expansion.
 
@@ -597,11 +645,11 @@ class GraphEngine:
         if edge_states["all_skipped"]:
             self._propagate_skip_state(downstream_node_id)
 
-    def _analyze_edge_states(self, edges: Sequence) -> EdgeStateAnalysis:
+    def _analyze_edge_states(self, edges: Sequence) -> _EdgeStateAnalysis:
         """Analyze the states of edges and return summary flags."""
         states = {edge.state for edge in edges}
 
-        return EdgeStateAnalysis(
+        return _EdgeStateAnalysis(
             has_unknown=NodeState.UNKNOWN in states,
             has_taken=NodeState.TAKEN in states,
             all_skipped=states == {NodeState.SKIPPED} if states else True,
@@ -694,6 +742,7 @@ class GraphEngine:
                 # Yield any new events
                 while yielded_count < len(self._collected_events):
                     yield self._collected_events[yielded_count]
+                    logger.debug("yield %r", self._collected_events[yielded_count])
                     yielded_count += 1
 
             # Small sleep to avoid busy waiting

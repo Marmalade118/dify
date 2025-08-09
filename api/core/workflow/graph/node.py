@@ -105,29 +105,28 @@ class Node:
                         error=result.error,
                     )
                     return
-                success_event = NodeRunSucceededEvent(
-                    id=node_execution_id,
-                    node_id=self.id,
-                    node_type=self.node_type,
-                    start_at=start_at,
-                    node_run_result=result,
-                )
+                elif result.status == WorkflowNodeExecutionStatus.SUCCEEDED:
+                    yield NodeRunSucceededEvent(
+                        id=node_execution_id,
+                        node_id=self.id,
+                        node_type=self.node_type,
+                        start_at=start_at,
+                        node_run_result=result,
+                    )
+                else:
+                    raise Exception(f"result status {result.status} not supported")
             else:
-                final_result = NodeRunResult()
                 for event in result:
-                    if isinstance(event, GraphBaseNodeEvent):
-                        event.id = node_execution_id
-                    elif isinstance(event, NodeRunCompletedEvent):
-                        final_result = event.run_result
+                    if isinstance(event, NodeRunCompletedEvent):
+                        yield NodeRunSucceededEvent(
+                            id=node_execution_id,
+                            node_id=self.id,
+                            node_type=self.node_type,
+                            start_at=start_at,
+                            node_run_result=event.node_run_result,
+                        )
+                        return
                     yield event
-                success_event = NodeRunSucceededEvent(
-                    id=node_execution_id,
-                    node_id=self.id,
-                    node_type=self.node_type,
-                    start_at=start_at,
-                    node_run_result=final_result,
-                )
-            yield success_event
         except Exception as e:
             logger.exception("Node %s failed to run", self.node_id)
             result = NodeRunResult(

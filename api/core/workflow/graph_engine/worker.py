@@ -11,10 +11,7 @@ from datetime import datetime
 from uuid import uuid4
 
 from core.workflow.enums import NodeType
-from core.workflow.events import (
-    GraphEngineEvent,
-    NodeRunFailedEvent,
-)
+from core.workflow.events import GraphBaseNodeEvent, NodeRunFailedEvent
 from core.workflow.graph.graph import Graph, Node
 
 
@@ -30,7 +27,7 @@ class Worker(threading.Thread):
     def __init__(
         self,
         ready_queue: queue.Queue[str],
-        event_queue: queue.Queue[GraphEngineEvent],
+        event_queue: queue.Queue[GraphBaseNodeEvent],
         graph: Graph,
         worker_id: int = 0,
     ) -> None:
