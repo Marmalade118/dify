@@ -98,10 +98,7 @@ class IterationNode(Node):
     def version(cls) -> str:
         return "1"
 
-    def _run(self) -> Generator[NodeEvent | InNodeEvent, None, None]:
-        """
-        Run the node.
-        """
+    def _run(self) -> Generator:
         variable = self.graph_runtime_state.variable_pool.get(self._node_data.iterator_selector)
 
         if not variable:

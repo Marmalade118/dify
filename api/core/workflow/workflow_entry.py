@@ -44,7 +44,6 @@ class WorkflowEntry:
         invoke_from: InvokeFrom,
         call_depth: int,
         graph_runtime_state: GraphRuntimeState,
-        thread_pool_id: Optional[str] = None,
     ) -> None:
         """
         Init workflow entry

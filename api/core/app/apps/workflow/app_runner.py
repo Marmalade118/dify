@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Optional, cast
+from typing import cast
 
 from configs import dify_config
 from core.app.apps.base_app_queue_manager import AppQueueManager
@@ -32,7 +32,6 @@ class WorkflowAppRunner(WorkflowBasedAppRunner):
         application_generate_entity: WorkflowAppGenerateEntity,
         queue_manager: AppQueueManager,
         variable_loader: VariableLoader,
-        workflow_thread_pool_id: Optional[str] = None,
         workflow: Workflow,
         system_user_id: str,
     ) -> None:
@@ -42,7 +41,6 @@ class WorkflowAppRunner(WorkflowBasedAppRunner):
             app_id=application_generate_entity.app_config.app_id,
         )
         self.application_generate_entity = application_generate_entity
-        self.workflow_thread_pool_id = workflow_thread_pool_id
         self._workflow = workflow
         self._sys_user_id = system_user_id
 
@@ -130,7 +128,6 @@ class WorkflowAppRunner(WorkflowBasedAppRunner):
             invoke_from=self.application_generate_entity.invoke_from,
             call_depth=self.application_generate_entity.call_depth,
             graph_runtime_state=graph_runtime_state,
-            thread_pool_id=self.workflow_thread_pool_id,
         )
 
         generator = workflow_entry.run(callbacks=workflow_callbacks)

@@ -13,13 +13,9 @@ from uuid import uuid4
 from core.workflow.enums import NodeType
 from core.workflow.events import (
     GraphEngineEvent,
-    NodeRunCompletedEvent,
     NodeRunFailedEvent,
-    NodeRunStartedEvent,
-    NodeRunSucceededEvent,
 )
 from core.workflow.graph.graph import Graph, Node
-from libs.datetime_utils import naive_utc_now
 
 
 class Worker(threading.Thread):
@@ -102,59 +98,10 @@ class Worker(threading.Thread):
         Args:
             node: The node instance to execute
         """
-        # Generate a single node execution ID to use for all events
-        node_execution_id = str(uuid4())
-
-        # Create and push start event with required fields
-        start_at = naive_utc_now()
-        start_event = NodeRunStartedEvent(
-            id=node_execution_id,  # Required: node execution id
-            node_id=node.id,
-            node_type=node.node_type,
-            node_title=node.title,
-            parallel_id=None,
-            in_iteration_id=None,
-            start_at=start_at,
-            node_run_index=0,
-        )
-
-        # === FIXME(-LAN-): shouldn't access private _node_data here, need to refactor
-        from core.workflow.nodes.tool.tool_node import ToolNode
-
-        if isinstance(node, ToolNode):
-            start_event.provider_id = node._node_data.provider_id
-            start_event.provider_type = node._node_data.provider_type.value
-        # ===
-
-        self.event_queue.put(start_event)
 
         # Execute the node
-        # Call the node's _run method (internal execution)
         node_events = node.run()
-
-        # Process node events and extract run result
-        node_run_result = None
 
         for event in node_events:
             # Forward event to dispatcher immediately for streaming
             self.event_queue.put(event)
-
-            # Check if this is the run completed event
-            if isinstance(event, NodeRunCompletedEvent) and node_run_result is None:
-                node_run_result = event.run_result
-
-        # Ensure we got a run result
-        if node_run_result is None:
-            raise RuntimeError(f"Node {node.id} execution completed without a RunCompletedEvent")
-
-        # Create and push success event
-        success_event = NodeRunSucceededEvent(
-            id=node_execution_id,  # Use same node execution id
-            node_id=node.id,
-            node_type=node.node_type,
-            parallel_id=None,
-            in_iteration_id=None,
-            start_at=start_at,
-            node_run_result=node_run_result,
-        )
-        self.event_queue.put(success_event)

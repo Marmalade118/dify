@@ -1,10 +1,20 @@
 import logging
 from abc import abstractmethod
 from collections.abc import Generator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from uuid import uuid4
 
 from core.app.entities.app_invoke_entities import InvokeFrom
-from core.workflow.enums import NodeExecutionType, NodeState
+from core.workflow.enums import NodeExecutionType, NodeState, NodeType, WorkflowNodeExecutionStatus
+from core.workflow.events import (
+    GraphBaseNodeEvent,
+    NodeRunFailedEvent,
+    NodeRunResult,
+    NodeRunStartedEvent,
+    NodeRunSucceededEvent,
+)
+from core.workflow.events.node import NodeRunCompletedEvent
+from libs.datetime_utils import naive_utc_now
 from models.enums import UserFrom
 
 from .base_entities import BaseNodeData, RetryConfig
@@ -12,14 +22,14 @@ from .base_entities import BaseNodeData, RetryConfig
 if TYPE_CHECKING:
     from core.workflow.entities import GraphInitParams, GraphRuntimeState
     from core.workflow.enums import ErrorStrategy, NodeType
-    from core.workflow.events import InNodeEvent, NodeEvent, NodeRunResult
+    from core.workflow.events import NodeRunResult
 
 logger = logging.getLogger(__name__)
 
 
 class Node:
     node_type: ClassVar["NodeType"]
-    execution_type: ClassVar[NodeExecutionType] = NodeExecutionType.EXECUTABLE
+    execution_type: NodeExecutionType = NodeExecutionType.EXECUTABLE
 
     def __init__(
         self,
@@ -52,19 +62,73 @@ class Node:
     def init_node_data(self, data: Mapping[str, Any]) -> None: ...
 
     @abstractmethod
-    def _run(self) -> "NodeRunResult | Generator[Union[NodeEvent, InNodeEvent], None, None]":
+    def _run(self) -> "NodeRunResult | Generator[GraphBaseNodeEvent, None, None]":
         """
         Run node
         :return:
         """
         raise NotImplementedError
 
-    def run(self) -> "Generator[Union[NodeEvent, InNodeEvent], None, None]":
-        from core.workflow.enums import WorkflowNodeExecutionStatus
-        from core.workflow.events import NodeRunCompletedEvent, NodeRunResult
+    def run(self) -> "Generator[GraphBaseNodeEvent, None, None]":
+        # Generate a single node execution ID to use for all events
+        node_execution_id = str(uuid4())
+
+        # Create and push start event with required fields
+        start_at = naive_utc_now()
+        start_event = NodeRunStartedEvent(
+            id=node_execution_id,
+            node_id=self.id,
+            node_type=self.node_type,
+            node_title=self.title,
+            parallel_id=None,
+            in_iteration_id=None,
+            start_at=start_at,
+            node_run_index=0,
+        )
+
+        yield start_event
+
+        # === FIXME(-LAN-): For ToolNode. Needs to refactor.
+        start_event.provider_id = getattr(self.get_base_node_data(), "provider_id", "")
+        start_event.provider_type = getattr(self.get_base_node_data(), "provider_type", "")
+        # ===
 
         try:
             result = self._run()
+            if isinstance(result, NodeRunResult):
+                if result.status == WorkflowNodeExecutionStatus.FAILED:
+                    yield NodeRunFailedEvent(
+                        id=node_execution_id,
+                        node_id=self.id,
+                        node_type=self.node_type,
+                        start_at=start_at,
+                        node_run_result=result,
+                        error=result.error,
+                    )
+                    return
+                success_event = NodeRunSucceededEvent(
+                    id=node_execution_id,
+                    node_id=self.id,
+                    node_type=self.node_type,
+                    start_at=start_at,
+                    node_run_result=result,
+                )
+            else:
+                final_result = NodeRunResult()
+                for event in result:
+                    if isinstance(event, GraphBaseNodeEvent):
+                        event.id = node_execution_id
+                    elif isinstance(event, NodeRunCompletedEvent):
+                        final_result = event.run_result
+                    yield event
+                success_event = NodeRunSucceededEvent(
+                    id=node_execution_id,
+                    node_id=self.id,
+                    node_type=self.node_type,
+                    start_at=start_at,
+                    node_run_result=final_result,
+                )
+            yield success_event
         except Exception as e:
             logger.exception("Node %s failed to run", self.node_id)
             result = NodeRunResult(
@@ -72,11 +136,14 @@ class Node:
                 error=str(e),
                 error_type="WorkflowNodeError",
             )
-
-        if isinstance(result, NodeRunResult):
-            yield NodeRunCompletedEvent(run_result=result)
-        else:
-            yield from result
+            yield NodeRunFailedEvent(
+                id=node_execution_id,  # Use same node execution id
+                node_id=self.id,
+                node_type=self.node_type,
+                start_at=start_at,
+                node_run_result=result,
+                error=str(e),
+            )
 
     @classmethod
     def extract_variable_selector_to_variable_mapping(
@@ -154,10 +221,6 @@ class Node:
         # If you have introduced a new node type, please add it to `NODE_TYPE_CLASSES_MAPPING`
         # in `api/core/workflow/nodes/__init__.py`.
         raise NotImplementedError("subclasses of BaseNode must implement `version` method.")
-
-    @property
-    def continue_on_error(self) -> bool:
-        return False
 
     @property
     def retry(self) -> bool:

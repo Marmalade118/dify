@@ -367,9 +367,5 @@ class CodeNode(Node):
         }
 
     @property
-    def continue_on_error(self) -> bool:
-        return self._node_data.error_strategy is not None
-
-    @property
     def retry(self) -> bool:
         return self._node_data.retry_config.retry_enabled

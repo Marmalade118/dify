@@ -61,9 +61,7 @@ from core.workflow.enums import (
 )
 from core.workflow.events import (
     GraphEngineEvent,
-    InNodeEvent,
     ModelInvokeCompletedEvent,
-    NodeEvent,
     NodeRunCompletedEvent,
     NodeRunResult,
     NodeRunStreamChunkEvent,
@@ -162,7 +160,7 @@ class LLMNode(Node):
     def version(cls) -> str:
         return "1"
 
-    def _run(self) -> Generator[NodeEvent | InNodeEvent, None, None]:
+    def _run(self) -> Generator:
         node_inputs: dict[str, Any] = {}
         process_data: dict[str, Any] = {}
         result_text = ""
@@ -1099,10 +1097,6 @@ class LLMNode(Node):
         else:
             logger.warning("unknown contents type encountered, type=%s", type(contents))
             yield str(contents)
-
-    @property
-    def continue_on_error(self) -> bool:
-        return self._node_data.error_strategy is not None
 
     @property
     def retry(self) -> bool:

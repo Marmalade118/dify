@@ -480,7 +480,7 @@ class WorkflowService:
             if not node_run_result:
                 raise ValueError("Node run failed with no run result")
             # single step debug mode error handling return
-            if node_run_result.status == WorkflowNodeExecutionStatus.FAILED and node.continue_on_error:
+            if node_run_result.status == WorkflowNodeExecutionStatus.FAILED and node.error_strategy:
                 node_error_args: dict[str, Any] = {
                     "status": WorkflowNodeExecutionStatus.EXCEPTION,
                     "error": node_run_result.error,

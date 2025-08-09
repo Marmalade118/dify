@@ -76,7 +76,7 @@ class LoopNode(Node):
     def version(cls) -> str:
         return "1"
 
-    def _run(self) -> Generator[NodeEvent | InNodeEvent, None, None]:
+    def _run(self) -> Generator:
         """Run the node."""
         # Get inputs
         loop_count = self._node_data.loop_count

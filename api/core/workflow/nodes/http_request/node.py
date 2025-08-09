@@ -99,7 +99,7 @@ class HttpRequestNode(Node):
 
             response = http_executor.invoke()
             files = self.extract_files(url=http_executor.url, response=response)
-            if not response.response.is_success and (self.continue_on_error or self.retry):
+            if not response.response.is_success and (self.error_strategy or self.retry):
                 return NodeRunResult(
                     status=WorkflowNodeExecutionStatus.FAILED,
                     outputs={
@@ -241,10 +241,6 @@ class HttpRequestNode(Node):
         files.append(file)
 
         return ArrayFileSegment(value=files)
-
-    @property
-    def continue_on_error(self) -> bool:
-        return self._node_data.error_strategy is not None
 
     @property
     def retry(self) -> bool:

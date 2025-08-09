@@ -14,13 +14,14 @@ from typing import Any, Optional, TypedDict
 
 from core.app.entities.app_invoke_entities import InvokeFrom
 from core.workflow.entities import GraphRuntimeState
-from core.workflow.enums import NodeExecutionType, NodeState
+from core.workflow.enums import ErrorStrategy, NodeExecutionType, NodeState, WorkflowNodeExecutionStatus
 from core.workflow.events import (
     GraphEngineEvent,
     GraphRunFailedEvent,
     GraphRunStartedEvent,
     GraphRunSucceededEvent,
     NodeRunFailedEvent,
+    NodeRunResult,
     NodeRunStartedEvent,
     NodeRunStreamChunkEvent,
     NodeRunSucceededEvent,
@@ -469,31 +470,17 @@ class GraphEngine:
         Args:
             event: The node failed event to handle
         """
-        # Check error strategy
-        pass
 
-        # Dispatch to strategy-specific handler
-        self._handle_error_strategy(event)
+        node = self.graph.nodes[event.node_id]
+        strategy = node.error_strategy
 
-        self._collect_event(event)
-
-    def _handle_error_strategy(self, event: NodeRunFailedEvent) -> None:
-        """
-        Handle error based on the configured strategy.
-
-        Args:
-            event: The node failed event with error strategy
-        """
-        # Get error strategy from event or node configuration
-        strategy = None  # Placeholder for getting strategy
-
-        if strategy == "ABORT":
+        if strategy is None:
             self._handle_abort_strategy(event)
-        elif strategy == "RETRY":
+        elif node.retry:
             self._handle_retry_strategy(event)
-        elif strategy == "SPECIAL_BRANCH":
+        elif strategy == ErrorStrategy.FAIL_BRANCH:
             self._handle_special_branch_strategy(event)
-        elif strategy == "DEFAULT_VALUE":
+        elif strategy == ErrorStrategy.DEFAULT_VALUE:
             self._handle_default_value_strategy(event)
 
     def _handle_abort_strategy(self, event: NodeRunFailedEvent) -> None:
@@ -504,7 +491,8 @@ class GraphEngine:
             event: The node failed event
         """
         # Serialize state & exit
-        pass
+        self._collect_event(event)
+        raise RuntimeError(event.node_run_result.error)
 
     def _handle_retry_strategy(self, event: NodeRunFailedEvent) -> None:
         """
@@ -523,20 +511,24 @@ class GraphEngine:
         Args:
             event: The node failed event
         """
-        # Force-take edge and mark others skipped
-        pass
-
-        # RSC.on_edge_taken returns new events
-        pass
-
-        # Emit RSC events
-        pass
-
-        # Check downstream nodes
-        pass
-
-        # Add ready nodes to ready_queue
-        pass
+        outputs = {
+            "error_message": event.node_run_result.error,
+            "error_type": event.node_run_result.error_type,
+        }
+        converted_event = NodeRunSucceededEvent(
+            id=event.id,
+            node_id=event.node_id,
+            node_type=event.node_type,
+            start_at=event.start_at,
+            node_run_result=NodeRunResult(
+                status=WorkflowNodeExecutionStatus.SUCCEEDED,
+                inputs=event.node_run_result.inputs,
+                process_data=event.node_run_result.process_data,
+                outputs=outputs,
+                edge_source_handle="fail-branch",
+            ),
+        )
+        self._process_event(converted_event)
 
     def _handle_default_value_strategy(self, event: NodeRunFailedEvent) -> None:
         """
@@ -545,14 +537,25 @@ class GraphEngine:
         Args:
             event: The node failed event
         """
-        # Use default value and mark node succeeded
-        pass
-
-        # Check downstream nodes
-        pass
-
-        # Add ready nodes to ready_queue
-        pass
+        node = self.graph.nodes[event.node_id]
+        outputs = {
+            **node.default_value_dict,
+            "error_message": event.node_run_result.error,
+            "error_type": event.node_run_result.error_type,
+        }
+        converted_event = NodeRunSucceededEvent(
+            id=event.id,
+            node_id=event.node_id,
+            node_type=event.node_type,
+            start_at=event.start_at,
+            node_run_result=NodeRunResult(
+                status=WorkflowNodeExecutionStatus.SUCCEEDED,
+                inputs=event.node_run_result.inputs,
+                process_data=event.node_run_result.process_data,
+                outputs=outputs,
+            ),
+        )
+        self._process_event(converted_event)
 
     def _handle_container_event(self, event: GraphEngineEvent) -> None:
         """

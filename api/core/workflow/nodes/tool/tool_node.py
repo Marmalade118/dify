@@ -120,7 +120,6 @@ class ToolNode(Node):
                 user_id=self.user_id,
                 workflow_tool_callback=DifyWorkflowCallbackHandler(),
                 workflow_call_depth=self.workflow_call_depth,
-                thread_pool_id=self.thread_pool_id,
                 app_id=self.app_id,
                 conversation_id=conversation_id.text if conversation_id else None,
             )
@@ -549,10 +548,6 @@ class ToolNode(Node):
 
     def get_base_node_data(self) -> BaseNodeData:
         return self._node_data
-
-    @property
-    def continue_on_error(self) -> bool:
-        return self._node_data.error_strategy is not None
 
     @property
     def retry(self) -> bool:

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Protocol
 
-from core.workflow.enums import NodeType
+from core.workflow.enums import ErrorStrategy, NodeExecutionType, NodeType
 from core.workflow.graph import Node
 
 from .node_mapping import LATEST_VERSION, NODE_TYPE_CLASSES_MAPPING
@@ -91,5 +91,9 @@ class DifyNodeFactory:
         # Initialize node with provided data
         node_data = node_config.get("data", {})
         node_instance.init_node_data(node_data)
+
+        # If node has fail branch, change execution type to branch
+        if node_instance.error_strategy == ErrorStrategy.FAIL_BRANCH:
+            node_instance.execution_type = NodeExecutionType.BRANCH
 
         return node_instance
