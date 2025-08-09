@@ -474,10 +474,10 @@ class GraphEngine:
         node = self.graph.nodes[event.node_id]
         strategy = node.error_strategy
 
-        if strategy is None:
-            self._handle_abort_strategy(event)
-        elif node.retry:
+        if node.retry:
             self._handle_retry_strategy(event)
+        elif strategy is None:
+            self._handle_abort_strategy(event)
         elif strategy == ErrorStrategy.FAIL_BRANCH:
             self._handle_special_branch_strategy(event)
         elif strategy == ErrorStrategy.DEFAULT_VALUE:
