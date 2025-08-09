@@ -213,7 +213,7 @@ class GraphEngine:
             logger.debug("response node '%s' is registered to RSC", node.id)
 
         root_node = self.graph.root_node
-        self._mark_taken_and_enqueue(root_node.id)
+        self._enqueue_node(root_node.id)
 
         # Start dispatcher thread
         self.dispatcher_thread = threading.Thread(target=self._dispatcher_loop, name="GraphDispatcher", daemon=True)
@@ -484,7 +484,7 @@ class GraphEngine:
 
         # Check and enqueue downstream node if ready
         if self._is_node_ready(edge.head):
-            self._mark_taken_and_enqueue(edge.head)
+            self._enqueue_node(edge.head)
 
     def _handle_node_failed_event(self, event: NodeRunFailedEvent) -> None:
         """
@@ -516,6 +516,8 @@ class GraphEngine:
         """
         # Serialize state & exit
         self._collect_event(event)
+        with self._executing_nodes_lock:
+            self._executing_nodes.remove(event.node_id)
         raise RuntimeError(event.error)
 
     def _handle_retry_strategy(self, event: NodeRunFailedEvent) -> None:
@@ -550,7 +552,7 @@ class GraphEngine:
         )
         self._collect_event(retry_event)
 
-        self._mark_taken_and_enqueue(event.node_id)
+        self._enqueue_node(event.node_id)
 
     def _handle_special_branch_strategy(self, event: NodeRunFailedEvent) -> None:
         """
@@ -658,7 +660,7 @@ class GraphEngine:
     def _handle_taken_edges(self, node_id: str) -> None:
         """Handle node when it has taken incoming edges."""
         if self._is_node_ready(node_id):
-            self._mark_taken_and_enqueue(node_id)
+            self._enqueue_node(node_id)
 
     def _propagate_skip_state(self, node_id: str) -> None:
         """Propagate SKIPPED state to node and its outgoing edges."""
@@ -670,7 +672,7 @@ class GraphEngine:
             edge.state = NodeState.SKIPPED
             self._recursively_mark_skipped_from_edge(edge_id)
 
-    def _mark_taken_and_enqueue(self, node_id: str) -> None:
+    def _enqueue_node(self, node_id: str) -> None:
         """
         Mark a node as TAKEN and add it to the ready queue.
 

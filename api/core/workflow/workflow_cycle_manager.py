@@ -375,7 +375,7 @@ class WorkflowCycleManager:
         }
 
         domain_execution = WorkflowNodeExecution(
-            id=str(uuid4()),
+            id=event.node_execution_id,
             workflow_id=workflow_execution.workflow_id,
             workflow_execution_id=workflow_execution.id_,
             predecessor_node_id=event.predecessor_node_id,
